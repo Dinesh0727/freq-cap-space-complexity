@@ -62,9 +62,13 @@ public class TestingClass implements CommandLineRunner {
         byte[] byteArrayForMinutesCompressed = Arrays.copyOfRange(byteArrayForMinutes, 8 - nofBytesInTimeStamp, 8);
 
         println("The array of bytes of seconds : ");
+        printByteArrayToConsole(byteArrayForSeconds);
+        println("The array of bytes of seconds compressed : ");
         printByteArrayToConsole(byteArrayForSecondsCompressed);
 
         println("The array of bytes of minutes : ");
+        printByteArrayToConsole(byteArrayForMinutes);
+        println("The array of bytes of minutes compressed : ");
         printByteArrayToConsole(byteArrayForMinutesCompressed);
 
         long x = bytesToLong(byteArrayForSecondsCompressed, nofBytesInTimeStamp);
@@ -76,10 +80,10 @@ public class TestingClass implements CommandLineRunner {
         createJedisResourcesMinutePrecisionCompressed(byteArrayForMinutesCompressed, 20);
         createJedisResourcesSecondPrecisionCompressed(byteArrayForSecondsCompressed, 100);
         createJedisResourcesMinutePrecisionCompressed(byteArrayForMinutesCompressed, 100);
-        createJedisResourcesUncompressed(20, timeSeconds, SECOND_PRECISION);
-        createJedisResourcesUncompressed(20, timeMinutes, MINUTE_PRECISION);
         createJedisResourcesUncompressed(100, timeSeconds, SECOND_PRECISION);
         createJedisResourcesUncompressed(100, timeMinutes, MINUTE_PRECISION);
+        createJedisResourcesUncompressed(20, timeSeconds, SECOND_PRECISION);
+        createJedisResourcesUncompressed(20, timeMinutes, MINUTE_PRECISION);
     }
 
     private void createJedisResourcesUncompressed(Integer noOfTimeStamps, Long timestamp, String precision)
@@ -96,10 +100,9 @@ public class TestingClass implements CommandLineRunner {
 
             String key = SENDER_ID + precision + noOfTimeStamps.toString() + TIMESTAMP;
 
-            jedis.hset(key.getBytes(), FIELD_1.getBytes(), convertStringBuilderToString(builder).getBytes());
-            jedis.hset(key.getBytes(), FIELD_2.getBytes(), convertStringBuilderToString(builder).getBytes());
-            jedis.hset(key.getBytes(), FIELD_3.getBytes(), convertStringBuilderToString(builder).getBytes());
-
+            jedis.hset(key, FIELD_1, convertStringBuilderToString(builder));
+            jedis.hset(key, FIELD_2, convertStringBuilderToString(builder));
+            jedis.hset(key, FIELD_3, convertStringBuilderToString(builder));
         }
     }
 
@@ -108,20 +111,27 @@ public class TestingClass implements CommandLineRunner {
 
         println("In createJedisResourcesSecondPrecisionCompressed");
         try (Jedis jedis = this.jedisPool.getResource()) {
-            StringBuilder builder = new StringBuilder("");
 
+            byte[] result = new byte[byteArrayForSeconds.length * noOfTimeStamps / 3];
             for (int i = 0; i < noOfTimeStamps / 3; i++) {
-                for (byte b : byteArrayForSeconds) {
-                    builder.append(b);
-                }
-                // builder.append("/");
+                System.arraycopy(byteArrayForSeconds, 0, result, i * byteArrayForSeconds.length,
+                        byteArrayForSeconds.length);
             }
+
+            // StringBuilder builder = new StringBuilder("");
+
+            // for (int i = 0; i < noOfTimeStamps / 3; i++) {
+            // for (byte b : byteArrayForSeconds) {
+            // builder.append(b);
+            // }
+            // // builder.append("/");
+            // }
 
             String key = SENDER_ID + SECOND_PRECISION + noOfTimeStamps.toString() + TIMESTAMP + COMPRESSED;
 
-            jedis.hset(key.getBytes(), FIELD_1.getBytes(), convertStringBuilderToString(builder).getBytes());
-            jedis.hset(key.getBytes(), FIELD_2.getBytes(), convertStringBuilderToString(builder).getBytes());
-            jedis.hset(key.getBytes(), FIELD_3.getBytes(), convertStringBuilderToString(builder).getBytes());
+            jedis.hset(key.getBytes(), FIELD_1.getBytes(), result);
+            jedis.hset(key.getBytes(), FIELD_2.getBytes(), result);
+            jedis.hset(key.getBytes(), FIELD_3.getBytes(), result);
         }
     }
 
@@ -130,20 +140,27 @@ public class TestingClass implements CommandLineRunner {
 
         println("In createJedisResourcesMinutePrecisionCompressed");
         try (Jedis jedis = this.jedisPool.getResource()) {
-            StringBuilder builder = new StringBuilder("");
 
+            byte[] result = new byte[byteArrayForMinutes.length * noOfTimeStamps / 3];
             for (int i = 0; i < noOfTimeStamps / 3; i++) {
-                for (byte b : byteArrayForMinutes) {
-                    builder.append(b);
-                }
-                // builder.append("/");
+                System.arraycopy(byteArrayForMinutes, 0, result, i * byteArrayForMinutes.length,
+                        byteArrayForMinutes.length);
             }
+
+            // StringBuilder builder = new StringBuilder("");
+
+            // for (int i = 0; i < noOfTimeStamps / 3; i++) {
+            // for (byte b : byteArrayForMinutes) {
+            // builder.append(b);
+            // }
+            // // builder.append("/");
+            // }
 
             String key = SENDER_ID + MINUTE_PRECISION + noOfTimeStamps.toString() + TIMESTAMP + COMPRESSED;
 
-            jedis.hset(key.getBytes(), FIELD_1.getBytes(), convertStringBuilderToString(builder).getBytes());
-            jedis.hset(key.getBytes(), FIELD_2.getBytes(), convertStringBuilderToString(builder).getBytes());
-            jedis.hset(key.getBytes(), FIELD_3.getBytes(), convertStringBuilderToString(builder).getBytes());
+            jedis.hset(key.getBytes(), FIELD_1.getBytes(), result);
+            jedis.hset(key.getBytes(), FIELD_2.getBytes(), result);
+            jedis.hset(key.getBytes(), FIELD_3.getBytes(), result);
         }
     }
 
@@ -176,11 +193,4 @@ public class TestingClass implements CommandLineRunner {
         return buffer.getLong();
     }
 
-    public long bytesToLongMinutes(byte[] bytes) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-        buffer.position(2);
-        buffer.put(bytes);
-        buffer.flip();// need flip
-        return buffer.getLong();
-    }
 }
